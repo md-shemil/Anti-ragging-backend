@@ -23,7 +23,9 @@ exports.submitComplaint = async (req, res) => {
 
 exports.getComplaints = async (req, res) => {
   try {
-    const complaints = await Complaint.find({ user_id: req.user.id });
+    // Admin should see all complaints
+    const complaints = await Complaint.find(); // No user_id filter here
+    
     res.status(200).json(complaints);
   } catch (error) {
     res.status(500).json({ message: 'Server error' });
