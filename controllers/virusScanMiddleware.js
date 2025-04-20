@@ -1,6 +1,7 @@
 const axios = require('axios');
 const crypto = require('crypto');
 const fs = require('fs');
+const ScanReport = require('../models/scanReport'); // Import the new ScanReport model
 
 const commonMalwarePatterns = [
   /javascript:/i,
@@ -34,6 +35,16 @@ const scanFile = async (req, res, next) => {
     const suspicious = checkCommonPatterns(fileBuffer);
     if (suspicious) {
       fs.unlinkSync(req.file.path);
+
+      // Save a suspicious report
+      await ScanReport.create({
+        originalFilename: req.file.originalname,
+        fileHash,
+        scanStatus: 'suspicious',
+        virusTotalLink: `https://www.virustotal.com/gui/file/${fileHash}`,
+        uploadedBy: req.user?._id, // If you have req.user populated
+      });
+
       return res.status(400).json({ error: 'File contains suspicious patterns. Upload rejected.' });
     }
 
@@ -47,14 +58,34 @@ const scanFile = async (req, res, next) => {
 
     if (malicious > 0) {
       fs.unlinkSync(req.file.path);
+
+      // Save a malicious report
+      await ScanReport.create({
+        originalFilename: req.file.originalname,
+        fileHash,
+        scanStatus: 'malicious',
+        virusTotalLink: `https://www.virustotal.com/gui/file/${fileHash}`,
+        uploadedBy: req.user?._id,
+      });
+
       return res.status(400).json({ error: 'File is malicious according to VirusTotal.' });
     }
+
+    // Save a clean report
+    await ScanReport.create({
+      originalFilename: req.file.originalname,
+      fileHash,
+      scanStatus: 'clean',
+      virusTotalLink: `https://www.virustotal.com/gui/file/${fileHash}`,
+      uploadedBy: req.user?._id,
+    });
 
     req.scanResult = {
       fileHash,
       scanStatus: 'clean',
       virusTotalLink: `https://www.virustotal.com/gui/file/${fileHash}`,
     };
+
     next();
   } catch (error) {
     console.error(error.response?.data || error.message);

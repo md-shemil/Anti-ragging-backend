@@ -40,7 +40,7 @@ exports.getComplaints = async (req, res) => {
       witnesses: complaint.witnesses,
       filePath: complaint.filePath,
       status: complaint.status,
-      submittedBy: complaint.user_id?.name || 'Unknown',
+      name: complaint.user_id?.name || 'Unknown',
       department: complaint.user_id?.department || 'Unknown',
       createdAt: complaint.createdAt,
       updatedAt: complaint.updatedAt,
